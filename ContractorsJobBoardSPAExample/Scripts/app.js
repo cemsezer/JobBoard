@@ -1,34 +1,21 @@
-﻿angular.module("JobBoard", ["ui.bootstrap"])
-    .controller("RegisterController", function($scope, $http, $modal) {
+﻿angular.module("JobBoard", ["ui.bootstrap", "ngRoute"])
+    .config(function($routeProvider) {
+
+        $routeProvider
+            .when("/register", {
+                templateUrl: "ng-views/register.html",
+                controller: "RegisterController"
+            })
+            .when("/login", {
+                templateUrl: "ng-views/login.html",
+                controller: "LoginController"
+            });
+    })
+    .controller("RegisterController", function($scope, $http) {
 
         $scope.email = "";
         $scope.password = "";
         $scope.confirmPassword = "";
-
-        $scope.open = function(size) {
-
-            var modalInstance = $modal.open({
-                animation: $scope.animationsEnabled,
-                templateUrl: "register.html",
-                controller: "ModalInstanceCtrl",
-                size: size
-            });
-        };
-    })
-    .controller("LoginController", function($scope, $modal) {
-
-        $scope.email = "";
-        $scope.password = "";
-
-        $scope.open = function() {
-            var modalInstance = $modal.open({
-                animation: $scope.animationsEnabled,
-                templateUrl: "login.html",
-                controller: "ModalInstanceCtrl2"
-            });
-        };
-    })
-    .controller("ModalInstanceCtrl", function($scope, $http, $modalInstance) {
 
         $scope.ok = function() {
             $http.post("api/Account/Register",
@@ -39,35 +26,31 @@
                 }).
                 then(function(response) {
                         alert("User Created");
-                        $modalInstance.close();
                     },
                     function(response) {
                         alert("User Not Created");
                     });
         };
 
-        $scope.cancel = function() {
-            $modalInstance.dismiss("cancel");
-        };
     })
-    .controller("ModalInstanceCtrl2", function($scope, $http, $modalInstance) {
-
+    .controller("LoginController", function($scope, $http, $q) {
+        $scope.email = "";
+        $scope.password = "";
         $scope.ok = function() {
-            $http.post("Token",
+            var data = "grant_type=password&username=" + $scope.email + "&password=" + $scope.password;
+            var deferred = $q.defer();
+            $http.post("/token",
+                data,
                 {
-                    Email: $scope.email,
-                    Password: $scope.password
-                }).
-                then(function(response) {
-                        alert("User Logged in");
-                        $modalInstance.close();
-                    },
-                    function(response) {
-                        alert("User Not Logged in");
-                    });
-        };
-
-        $scope.cancel = function() {
-            $modalInstance.dismiss("cancel");
+                    headers: { 'Content-Type': "application/x-www-form-urlencoded" }
+                }).success(function(response) {
+                deferred.resolve(response);
+            }).error(function(err, status) {
+/*
+                _logOut();
+*/
+                deferred.reject(err);
+            });
+            return deferred.promise;
         };
     });
